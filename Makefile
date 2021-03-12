@@ -80,6 +80,8 @@ $(BUILD)/%.img.bin : %.png %.grit
 #---------------------------------------------------------------------------------
 	grit $< -ff$(GRAPHICS)/$(notdir $(word 2,$^)) -ftb -p! -fh! -o$@
 
+$(BUILD)/graphics.o : $(patsubst $(GRAPHICS)/%.png,$(BUILD)/%.img.bin,$(wildcard $(GRAPHICS)/*.png))
+
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
 # rules for different file extensions

@@ -1,3 +1,10 @@
+# GBA
+build/
+*.elf
+*.gba
+*.sav
+
+
 # Prerequisites
 *.d
 

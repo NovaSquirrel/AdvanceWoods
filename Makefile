@@ -64,6 +64,16 @@ LIBS	:= -lmm -ltonc
 LIBDIRS	:=	$(LIBGBA) $(LIBTONC)
 
 #---------------------------------------------------------------------------------
+# Python executable name depends on operating system.
+# COMSPEC is present on Windows, not UNIX
+#---------------------------------------------------------------------------------
+ifdef COMSPEC
+  PY := py -3
+else
+  PY := python3
+endif
+
+#---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
 # rules for different file extensions
 #---------------------------------------------------------------------------------
@@ -76,7 +86,8 @@ export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 			$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
-			$(foreach dir,$(GRAPHICS),$(CURDIR)/$(dir))
+			$(foreach dir,$(GRAPHICS),$(CURDIR)/$(dir)) \
+			$(foreach dir,$(SCRIPT_OUT),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
@@ -85,6 +96,7 @@ CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 GFXFILES    :=	$(foreach dir, $(GRAPHICS), $(notdir $(wildcard $(dir)/*.png)))
+SCRIPT_GENERATED_FILES := vwf7.s
 
 ifneq ($(strip $(MUSIC)),)
 	export AUDIOFILES	:=	$(foreach dir,$(notdir $(wildcard $(MUSIC)/*.*)),$(CURDIR)/$(MUSIC)/$(dir))
@@ -107,7 +119,7 @@ endif
 
 export OFILES_BIN := $(addsuffix .o,$(BINFILES))
 
-export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
+export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o) $(SCRIPT_GENERATED_FILES:.s=.o)
 
 export OFILES := $(OFILES_BIN) $(GFXFILES:.png=.o) $(OFILES_SOURCES)
 
@@ -176,6 +188,14 @@ soundbank.bin soundbank.h : $(AUDIOFILES)
 # No grit-file: try using dir.grit
 %.s %.h	: %.png
 	$(GRIT) $< -fts -ff $(<D)/$(notdir $(<D)).grit
+
+#---------------------------------------------------------------------------------
+# Files that are automatically generated via scripts
+#---------------------------------------------------------------------------------
+
+#Placeholder sample, replace once I actually have something:
+#vwf7.s: ../tools/vwfbuild.py vwf7_cp144p.png
+#	$(PY) $^ $@
 
 -include $(DEPSDIR)/*.d
 #---------------------------------------------------------------------------------------

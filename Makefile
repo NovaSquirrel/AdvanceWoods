@@ -1,5 +1,3 @@
-# Identical to the DevKitARM template makefile, but uses tonclib instead of libgba
-
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
@@ -8,9 +6,13 @@ ifeq ($(strip $(DEVKITARM)),)
 $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
 endif
 
-# Use this abomination because the makefile re-calls make using -f, so I have
-# to get makefile directory, not CURDIR
-include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/gba_rules.mak
+include $(DEVKITARM)/gba_rules
+GRIT    := grit
+
+#---------------------------------------------------------------------------------
+# the LIBGBA path is defined in gba_rules, but we have to define LIBTONC ourselves
+#---------------------------------------------------------------------------------
+LIBTONC := $(DEVKITPRO)/libtonc
 
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
@@ -24,20 +26,20 @@ include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/gba_rules.mak
 # the makefile is found
 #
 #---------------------------------------------------------------------------------
-TARGET    := $(notdir $(CURDIR))
-BUILD     := build
-SOURCES   := src
-INCLUDES  := include
-DATA      := data
-MUSIC     := 
-GRAPHICS  := tilesets
+TARGET		:= $(notdir $(CURDIR))
+BUILD		:= build
+SOURCES		:= src
+INCLUDES	:= include
+DATA		:=
+MUSIC		:=
+GRAPHICS	:= tilesets
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH      := -mthumb -mthumb-interwork
+ARCH	:=	-mthumb -mthumb-interwork
 
-CFLAGS    := -g -Wall -O2\
+CFLAGS	:=	-g -Wall -O2\
 		-mcpu=arm7tdmi -mtune=arm7tdmi\
 		$(ARCH)
 
@@ -51,36 +53,15 @@ LDFLAGS	=	-g $(ARCH) -Wl,-Map,$(notdir $*.map)
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:= -ltonc
+LIBS	:= -lmm -ltonc
 
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
-# include and lib
+# include and lib.
+# the LIBGBA path should remain in this list if you want to use maxmod
 #---------------------------------------------------------------------------------
-LIBDIRS	:=	$(LIBTONC)
-
-#---------------------------------------------------------------------------------
-# Python executable name depends on operating system.
-# COMSPEC is present on Windows, not UNIX
-#---------------------------------------------------------------------------------
-ifdef COMSPEC
-  PY := py -3
-else
-  PY := python3
-endif
-
-#---------------------------------------------------------------------------------
-# This rule creates assembly source files using grit
-# grit takes an image file and a .grit describing how the file is to be processed
-# add additional rules like this for each image extension
-# you use in the graphics folders 
-#---------------------------------------------------------------------------------
-$(BUILD)/%.img.bin : %.png %.grit
-#---------------------------------------------------------------------------------
-	grit $< -ff$(GRAPHICS)/$(notdir $(word 2,$^)) -ftb -p! -fh! -o$@
-
-$(BUILD)/graphics.o : $(patsubst $(GRAPHICS)/%.png,$(BUILD)/%.img.bin,$(wildcard $(GRAPHICS)/*.png))
+LIBDIRS	:=	$(LIBGBA) $(LIBTONC)
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -128,7 +109,7 @@ export OFILES_BIN := $(addsuffix .o,$(BINFILES))
 
 export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 
-export OFILES := $(OFILES_BIN) $(OFILES_SOURCES)
+export OFILES := $(OFILES_BIN) $(GFXFILES:.png=.o) $(OFILES_SOURCES)
 
 export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES)))
 
@@ -184,6 +165,17 @@ soundbank.bin soundbank.h : $(AUDIOFILES)
 	@echo $(notdir $<)
 	@$(bin2o)
 
+#---------------------------------------------------------------------------------
+# Graphics processing
+#---------------------------------------------------------------------------------
+
+# With matching grit-file
+%.s %.h	: %.png %.grit
+	$(GRIT) $< -fts
+
+# No grit-file: try using dir.grit
+%.s %.h	: %.png
+	$(GRIT) $< -fts -ff $(<D)/$(notdir $(<D)).grit
 
 -include $(DEPSDIR)/*.d
 #---------------------------------------------------------------------------------------

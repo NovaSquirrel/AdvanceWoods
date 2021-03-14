@@ -87,16 +87,18 @@ export OUTPUT	:=	$(CURDIR)/$(TARGET)
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 			$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
 			$(foreach dir,$(GRAPHICS),$(CURDIR)/$(dir)) \
+			$(foreach dir,$(PALETTES),$(CURDIR)/$(dir)) \
 			$(foreach dir,$(SCRIPT_OUT),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+CFILES		:=	$(foreach dir, $(SOURCES),  $(notdir $(wildcard $(dir)/*.c)))
+CPPFILES	:=	$(foreach dir, $(SOURCES),  $(notdir $(wildcard $(dir)/*.cpp)))
+SFILES		:=	$(foreach dir, $(SOURCES),  $(notdir $(wildcard $(dir)/*.s)))
+BINFILES	:=	$(foreach dir, $(DATA),     $(notdir $(wildcard $(dir)/*.*)))
 GFXFILES    :=	$(foreach dir, $(GRAPHICS), $(notdir $(wildcard $(dir)/*.png)))
-SCRIPT_GENERATED_FILES := vwf7.s
+PALFILES    :=	$(foreach dir, $(PALETTES), $(notdir $(wildcard $(dir)/*.png)))
+SCRIPT_GENERATED_FILES := palettedata.s
 
 ifneq ($(strip $(MUSIC)),)
 	export AUDIOFILES	:=	$(foreach dir,$(notdir $(wildcard $(MUSIC)/*.*)),$(CURDIR)/$(MUSIC)/$(dir))
@@ -119,9 +121,9 @@ endif
 
 export OFILES_BIN := $(addsuffix .o,$(BINFILES))
 
-export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o) $(SCRIPT_GENERATED_FILES:.s=.o)
+export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 
-export OFILES := $(OFILES_BIN) $(GFXFILES:.png=.o) $(OFILES_SOURCES)
+export OFILES := $(OFILES_BIN) $(GFXFILES:.png=_chr.o) $(SCRIPT_GENERATED_FILES:.s=.o) $(OFILES_SOURCES)
 
 export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES)))
 
@@ -158,11 +160,6 @@ $(OUTPUT).elf	:	$(OFILES)
 $(OFILES_SOURCES) : $(HFILES)
 
 #---------------------------------------------------------------------------------
-# The bin2o rule should be copied and modified
-# for each extension used in the data directories
-#---------------------------------------------------------------------------------
-
-#---------------------------------------------------------------------------------
 # rule to build soundbank from music files
 #---------------------------------------------------------------------------------
 soundbank.bin soundbank.h : $(AUDIOFILES)
@@ -171,6 +168,8 @@ soundbank.bin soundbank.h : $(AUDIOFILES)
 
 #---------------------------------------------------------------------------------
 # This rule links in binary data with the .bin extension
+# The bin2o rule should be copied and modified
+# for each extension used in the data directories
 #---------------------------------------------------------------------------------
 %.bin.o	%_bin.h :	%.bin
 #---------------------------------------------------------------------------------
@@ -182,20 +181,19 @@ soundbank.bin soundbank.h : $(AUDIOFILES)
 #---------------------------------------------------------------------------------
 
 # With matching grit-file
-%.s %.h	: %.png %.grit
-	$(GRIT) $< -fts
+%_chr.s %_chr.h	: %.png %.grit
+	$(GRIT) $< -fts -o$*_chr
 
 # No grit-file: try using dir.grit
-%.s %.h	: %.png
-	$(GRIT) $< -fts -ff $(<D)/$(notdir $(<D)).grit
+%_chr.s %_chr.h	: %.png
+	$(GRIT) $< -fts -ff $(<D)/$(notdir $(<D)).grit -o$*_chr
 
 #---------------------------------------------------------------------------------
 # Files that are automatically generated via scripts
 #---------------------------------------------------------------------------------
 
-#Placeholder sample, replace once I actually have something:
-#vwf7.s: ../tools/vwfbuild.py vwf7_cp144p.png
-#	$(PY) $^ $@
+palettedata.s palettedata.h : ../tools/encodepalettes.py $(palettes)
+	$(PY) $< $@
 
 -include $(DEPSDIR)/*.d
 #---------------------------------------------------------------------------------------

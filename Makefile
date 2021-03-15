@@ -97,7 +97,6 @@ CPPFILES	:=	$(foreach dir, $(SOURCES),  $(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir, $(SOURCES),  $(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir, $(DATA),     $(notdir $(wildcard $(dir)/*.*)))
 GFXFILES    :=	$(foreach dir, $(GRAPHICS), $(notdir $(wildcard $(dir)/*.png)))
-PALFILES    :=	$(foreach dir, $(PALETTES), $(notdir $(wildcard $(dir)/*.png)))
 SCRIPT_GENERATED_FILES := palettedata.s
 
 ifneq ($(strip $(MUSIC)),)
@@ -192,7 +191,7 @@ soundbank.bin soundbank.h : $(AUDIOFILES)
 # Files that are automatically generated via scripts
 #---------------------------------------------------------------------------------
 
-palettedata.s palettedata.h : ../tools/encodepalettes.py $(palettes)
+palettedata.s palettedata.h : ../tools/encodepalettes.py $(wildcard palettes/*.png)
 	$(PY) $< $@
 
 -include $(DEPSDIR)/*.d

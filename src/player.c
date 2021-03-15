@@ -56,14 +56,15 @@ static int can_pickup_xy(struct player_state *p, int x, int y) {
 }
 
 void update_player(struct player_state *p) {
-	p->key_new = ~p->key_last & p->key_down;
-	p->key_last = p->key_down;
-
-	if((p->key_down & (KEY_LEFT | KEY_RIGHT)) == 0) {
+	if((p->key_down & (KEY_LEFT | KEY_RIGHT)) == 0 ||
+		(p->key_down & (KEY_LEFT | KEY_RIGHT)) != (p->key_last & (KEY_LEFT | KEY_RIGHT))
+	) {
 		p->key_repeat_timer = 0;
 	} else if(p->key_repeat_timer < 60) {
 		p->key_repeat_timer++;
 	}
+	p->key_new = ~p->key_last & p->key_down;
+	p->key_last = p->key_down;
 
 	int old_move = p->current_move;
 	if(p->move_timer) {
@@ -76,7 +77,8 @@ void update_player(struct player_state *p) {
 	if(p->key_down & KEY_LEFT) {
 		if(p->player_dir == 1 && !p->current_move && (p->key_repeat_timer > 8 || old_move == MOVE_DOWN) ) {
 			if(!solid_xy(p, p->player_x-1, p->player_y)) {
-				if(solid_xy(p, p->player_x-1, p->player_y+1) || solid_xy(p, p->player_x, p->player_y+1)) {
+				if( (solid_xy(p, p->player_x-1, p->player_y+1) && old_move == MOVE_UP)
+				|| solid_xy(p, p->player_x, p->player_y+1)) {
 					p->buffered_move = MOVE_LEFT;
 				}
 			} else if(!solid_xy(p, p->player_x, p->player_y-1)){
@@ -89,7 +91,8 @@ void update_player(struct player_state *p) {
 	if(p->key_down & KEY_RIGHT) {
 		if(p->player_dir == 0 && !p->current_move && (p->key_repeat_timer > 8 || old_move == MOVE_DOWN) ) {
 			if(!solid_xy(p, p->player_x+1, p->player_y)) {
-				if(solid_xy(p, p->player_x+1, p->player_y+1) || solid_xy(p, p->player_x+1, p->player_y+1)) {
+				if( (solid_xy(p, p->player_x+1, p->player_y+1) && old_move == MOVE_UP)
+				|| solid_xy(p, p->player_x, p->player_y+1)) {
 					p->buffered_move = MOVE_RIGHT;
 				}
 			} else if(!solid_xy(p, p->player_x, p->player_y-1)){

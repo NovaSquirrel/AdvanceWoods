@@ -138,7 +138,7 @@ void run_gameplay() {
 
 		obj_buffer[0].attr0 = ATTR0_Y_MASK&(players[0].player_y*16-16+player_offset_y);
 		obj_buffer[0].attr1 = (ATTR1_X_MASK&(players[0].player_x*16+8-8+player_offset_x)) | ATTR1_SIZE_32x32 | (players[0].player_dir?ATTR1_HFLIP:0);
-		obj_buffer[0].attr2 = 0;
+		obj_buffer[0].attr2 = (players[0].move_timer&4)*4;
 		obj_used = 1;
 
 		players[0].key_down = ~REG_KEYINPUT;

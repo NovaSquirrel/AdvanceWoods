@@ -8,7 +8,7 @@
 #define PLAYFIELD_H 10
 
 enum {
-	BLOCK_CARRIED = 1
+	BLOCK_CARRIED = 1,
 };
 
 struct block {
@@ -35,14 +35,20 @@ enum BLOCK_TYPE {
 	DIAMOND_GREEN,
 	DIAMOND_BLUE,
 	DIAMOND_BROWN,
-	DIAMOND_GRAY
+	DIAMOND_GRAY,
+	EXPLOSION_RED,
+	EXPLOSION_YELLOW,
+	EXPLOSION_GREEN,
+	EXPLOSION_BLUE,
+	EXPLOSION_BROWN,
+	EXPLOSION_GRAY,
 };
 
 enum board_state {
-	BOARD_STARTUP,
 	BOARD_IDLE,
 	BOARD_WALKING,
 	BOARD_EXPLODING,
+	BOARD_BLOCKS_FALLING,
 };
 
 enum player_move {
@@ -53,7 +59,7 @@ enum player_move {
 	MOVE_DOWN,
 	MOVE_PICK_UP_ONE,
 	MOVE_PICK_UP_ALL,
-	MOVE_PUT_DOWN,
+	MOVE_TOP_OF_STACK,
 };
 
 #define KEY_GET_ONE    KEY_B
@@ -66,6 +72,9 @@ ALIGN4 struct player_state {
 	int frame, animation_frame;
 	int player_x, player_y, player_dir;
 	unsigned int key_down, key_last, key_new;
+
+	enum board_state board_state;
+	int state_timer;
 
 	uint_fast8_t key_repeat_timer;
 
@@ -80,6 +89,7 @@ ALIGN4 struct player_state {
 extern OBJ_ATTR obj_buffer[128];         // Mirror
 extern OBJ_AFFINE *const obj_aff_buffer;
 extern int obj_used;                     // Number of sprites used so far
+extern const int block_color[];
 
 IWRAM_CODE void random_seed(pcg32_random_t *state, uint64_t seed, uint64_t sequence);
 IWRAM_CODE uint32_t random_raw(struct player_state *p);
